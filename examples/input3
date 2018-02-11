@@ -1,0 +1,24 @@
+name: harm3
+color: 1,0,1,1
+center: 150,400
+cycles: 20
+{ 
+  type: oscillation
+  name: input2p2
+  center: 150,400
+  frequency: 1.1
+  color: .2,.3,1,1
+  startphase: .25
+  direction: 0,1
+  amplitude: 100
+}
+{ 
+  type: oscillation
+  name: input2p2
+  center: 150,400
+  frequency: .5
+  color: 1,0,0,1
+  startphase: 1
+  direction: 1,0
+  amplitude: 100
+}

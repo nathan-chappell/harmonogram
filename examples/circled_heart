@@ -1,0 +1,29 @@
+name: 3_2+Octave
+center: 550,250
+color: .2,.8,.7,1
+cycles: 3.9
+
+
+/*
+   Makes a circled heart
+*/
+{ 
+  type: rotation
+  name: p2
+  center: 150,200
+  frequency: 1
+  color: 0,1,0,.8
+  startphase: .5
+  direction: 1,0
+  amplitude: 75
+}
+{ 
+  type: rotation
+  name: p3
+  center: 150,200
+  frequency: .75
+  color: 1,0,0,.8
+  startphase: .5
+  direction: 0,1
+  amplitude: 100
+}

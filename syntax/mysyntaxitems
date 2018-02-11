@@ -1,0 +1,15 @@
+hi clear
+hi braces cterm=bold ctermbg=195 ctermfg=16
+hi classes cterm=bold ctermfg=166
+hi descriptiveVariable cterm=bold ctermfg=164
+hi privateMember cterm=bold ctermfg=9
+hi cairo cterm=bold ctermfg=33
+hi events cterm=bold ctermfg=45
+
+syntax match braces /[{}]/
+syntax match classes /\<[A-Z]\w*/
+syntax match descriptiveVariable /\<[a-z]\w*[A-Z]\w*/
+syntax match privateMember /\<[a-z]\w*_\>/
+syntax match cairo /c->\w*/
+syntax match events /\<on_\w*\|\<signal_\w*/
+

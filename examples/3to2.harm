@@ -1,0 +1,29 @@
+name: 3to2
+center: 550,250
+color: .2,.8,.7,1
+cycles: 15.5
+
+
+/*
+   Makes a psychadelic hourglass, try it in rainbow!
+*/
+{ 
+  type: oscillation
+  name: 3to2_p1
+  center: 150,200
+  frequency: 1
+  color: 0,1,0,.8
+  startphase: .5
+  direction: 1,0
+  amplitude: 100
+}
+{ 
+  type: oscillation
+  name: 3to2_p2
+  center: 150,200
+  frequency: .66667
+  color: 1,0,0,.8
+  startphase: 0
+  direction: 0,1
+  amplitude: 100
+}

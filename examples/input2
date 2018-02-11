@@ -1,0 +1,42 @@
+name: harm2
+color: 1,0,1,1
+center: 500,400
+cycles: 4
+{ 
+  type: rotation
+  name: harm2p1
+  center: 500,150
+  frequency: 2.1
+  color: 0,0,1,1
+  startphase: .5
+  direction: 0,1
+  amplitude: 10
+}
+{ 
+  type: rotation
+  name: harm2p2
+  center: 500,150
+  frequency: 1.95
+  color: 1,0,0,.5
+  startphase: .25
+  direction: 0,1
+  amplitude: 10
+}{ 
+  type: rotation
+  name: harm2p3
+  center: 500,150
+  frequency: .97
+  color: 0,1,1,1
+  startphase: .25
+  direction: 0,1
+  amplitude: 41
+}{ 
+  type: rotation
+  name: harm2p4
+  center: 500,150
+  frequency: .69
+  color: 1,1,0,1
+  startphase: .26
+  direction: 0,1
+  amplitude: 79
+}

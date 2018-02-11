@@ -1,0 +1,422 @@
+//location.h
+#pragma once
+
+#include <string>
+#include <list>
+
+struct Location {
+  std::string fileName;
+  size_t line;
+  size_t column;
+
+  void Reset();
+  std::string ToString() const;
+  bool operator<=(const Location& rhs) const;
+};
+
+class Range {
+ public:
+  Location begin;
+  Location end;
+
+  bool InRange(const Location& where) const;
+  std::list<size_t> Lines() const;
+  std::string ToString() const;
+  bool Valid() const;
+  bool operator<(const Range& rhs) const;
+};
+
+
+//pendulum.h
+#pragma once
+
+#include <cmath>
+#include <list>
+#include <memory>
+#include <string>
+
+namespace pendulumNames {
+using std::list;
+using std::string;
+
+struct Position {
+  double x;
+  double y;
+
+  string ToString() const;
+  Position& operator+=(const Position& rhs);
+  Position& operator-=(const Position& rhs);
+};
+
+Position operator+(Position lhs, const Position& rhs);
+Position operator-(Position lhs, const Position& rhs);
+
+double Norm(const Position& pos);
+
+//note: a Position is a Direction...
+typedef Position Direction;
+
+//units are Hz
+class Frequency {
+ public:
+  double value;
+  double phase;
+
+  void ModulatePhase();
+  double Period() const;
+  void SetStartPhase(double startPhase);
+  string ToString() const;
+};
+
+struct Color {
+  double R,G,B,A;
+  string ToString() const;
+};
+
+class PendulumBase {
+ public:
+  Color color;
+  Position center;
+  string name;
+  Position position;
+  size_t preferredBufferSize;
+
+  static double timeDelta;
+
+  virtual double GetCycles() const = 0;
+  virtual void UpdatePosition() = 0;
+  virtual string ToString() const = 0;
+  virtual void SetPreferredBufferSize() = 0;
+  /*
+   * The following functions are here because of design errors.  Originally,
+   * what is now "SimplePendulum" and "CompoundPendulum" were completely
+   * different classes, but it seemed useful to combine them in order to
+   * simplifiy their handling elsewhere.  But, there are some functions that
+   * need to be available for only the SimplePendulum, so they are basically
+   * dummies otherwise.
+   */
+  virtual bool IsValid() const = 0;
+};
+
+using PendulumPtr = std::unique_ptr<PendulumBase>;
+
+class SimplePendulum : public PendulumBase {
+ public:
+  enum Type {kOscillation, kRotation, kInvalid};
+
+  double amplitude;
+  Direction direction;
+  Frequency frequency;
+  //Direction for oscillation
+  Type type;
+
+  SimplePendulum();
+  double GetCycles() const override;
+  double GetPeriod() const;
+  bool IsValid() const override;
+  void SetPreferredBufferSize();
+  string ToString() const override;
+  void UpdatePosition() override;
+  double WaveLength() const;
+};
+
+ class HarmonogramParser;
+
+class CompoundPendulum : public PendulumBase {
+ public:
+  void AddPendulum(PendulumBase* p) { pendulumList_.push_back(p); }
+  double GetCycles() const override;
+  bool IsValid() const override;
+  void SetPreferredBufferSize();
+  string ToString() const override;
+  void UpdatePosition() override;
+
+  friend list<PendulumPtr> ReadCurrentInput(HarmonogramParser& parser);
+
+  double cycles_;
+ private:
+  list<PendulumBase*> pendulumList_;
+};
+
+//returns the amount shifted
+Position TranslateCenter(PendulumBase& pendulum, double newx, double newy);
+
+}; //namespace pendulumNames
+//pendulum_parser.h
+#pragma once
+
+#include <fstream>
+#include <iostream>
+#include <list>
+#include <map>
+#include <memory>
+#include <string>
+
+#include "location.h"
+#include "pendulum.h"
+#include "trie.h"
+
+namespace pendulumNames {
+using std::cout;
+using std::endl;
+using std::ifstream;
+using std::istream;
+using std::list;
+using std::map;
+using std::move;
+using std::pair;
+using std::string;
+using std::unique_ptr;
+
+const string kServerName = "PendulumServer";
+typedef string PendulumId;
+
+class HarmonogramParser {
+ public:
+
+  HarmonogramParser();
+
+  list<PendulumPtr> Parse(const list<string>& fileNameList);
+
+  bool Advance();
+  void Error(const string& function, const string& message);
+  string GetCursor();
+  Location GetLocation() { return location_; }
+  istream& GetStream() { return *input_; }
+  string GetToken() { return trie_.GetToken(); }
+  bool Good() { return input_->good(); }
+
+  string lastRead;
+  map<PendulumId, Range> locationMap;
+
+ private:
+  istream* input_;
+  Trie trie_;
+  Location location_;
+
+  void AdvanceCursor();
+};
+
+}; //namespace pendulumNames
+//ringbuffer.h
+#pragma once
+
+#include <vector>
+
+/*
+ * The Ringbuffer holds a vector, and allows range-based for loops to go from
+ * the "front_index", to the end, then start from the beginning and continuing
+ * iterating to the "front_index".  It offeres limited functionality as a
+ * general container, but is useful for the pendulums.
+ *
+ * example:
+ * RingBuffer<int> rbi; // only default construction
+ * rbi.Fill(3,0); // resizes the buffer to "3", fills all positions with 0
+ * for (int i = 0; i < 5; ++i) rbi.Push(i);
+ *          // Push(val) puts "val" into the position after "front_index", and
+ *          // wraps around to the beginning once the end is reached, rbi.buffer
+ *          // now holds {3,4,5}
+ * for (auto& i : rbi) rbi *= 2; //rbi.buffer == {6,8,10}
+ *
+ * rbi.Translate(2); 
+ *          // Translate() uses += to add a value to every item. rbi.buffer ==
+ *          // {8, 10, 12}
+ *
+ *
+ */
+
+using std::vector;
+
+template<typename T>
+class RingBufferIterator {
+ public:
+  size_t pos;
+  vector<T>* ptr;
+  size_t& operator++() {
+    ++pos %= ptr->size();
+    return pos;
+  }
+  size_t& operator--() {
+    (pos == 0) ? pos = ptr->size() - 1 : --pos;
+    return pos;
+  }
+  T* get() { return &(*ptr)[pos]; }
+  T& operator*() { return (*ptr)[pos]; }
+  T* operator->() { return get(); }
+  const T& operator*() const { return (*ptr)[pos]; }
+  const T& operator->() const { return (*ptr)[pos]; }
+  bool operator==(const RingBufferIterator& l) const { return pos == l.pos; }
+  bool operator!=(const RingBufferIterator& l) const { return !(*this == l); }
+};
+
+/*
+ * The type used for the ringbuffer must be support default construction, copy
+ * construction, and (if Translate is to be used) +=,
+ */
+template<typename T>
+class RingBuffer {
+ public:
+  using Iterator = RingBufferIterator<T>;
+
+  RingBuffer() : 
+    front_index(0), buffer() {}
+
+  Iterator begin() {
+    if (front_index == buffer.size() - 1) return Iterator{0, &buffer};
+    else return {front_index + 1, &buffer};
+  }
+
+  Iterator end() {
+    return {front_index, &buffer};
+  }
+
+  T& front() {
+    return *begin();
+  }
+
+  void Push(const T& position) { 
+    if (buffer.size() == 0) {
+      buffer.push_back(position);
+    } else {
+      ++front_index %= buffer.size();
+      buffer[front_index] = position; 
+    }
+  }
+
+  void Fill(size_t size, const T& pos) {
+    buffer.clear();
+    buffer.reserve(size);
+    for(size_t i = 0; i < size; ++i) buffer.push_back(pos);
+  }
+
+  void Translate(const T& p) {
+    for (auto& pos : buffer) { pos += p; }
+  }
+
+  T& operator[](size_t i) { return buffer[i]; }
+  const T& operator[](size_t i) const { return buffer[i]; }
+
+  //TODO make these private, possibly needing a friend class...
+  size_t front_index;
+  vector<T> buffer;
+};
+
+//trie.h
+#pragma once
+
+#include <iostream>
+#include <istream>
+#include <list>
+#include <memory>
+#include <string>
+
+class TrieNode;
+class Trie {
+ public:
+  Trie();
+
+  void Insert(const std::list<std::string>& tokens);
+  void Insert(const std::string& branch);
+
+  std::string GetToken();
+
+  void Reset();
+
+  std::string ReadNext(std::istream& is);
+  
+  void Dump();
+
+  ~Trie();
+
+ private:
+  std::unique_ptr<TrieNode> root_;
+  TrieNode* current_;
+};
+
+//vimserver.h
+#pragma once
+
+#include <list>
+#include <fstream>
+#include <iostream>
+#include <map>
+#include <sstream>
+#include <string>
+
+#include "location.h"
+
+namespace vimserverNames {
+using std::string;
+using std::list;
+using std::map;
+
+typedef size_t HighlighId;
+
+//chokepoint for system calls
+void MySystemCall(const std::string& command);
+
+class VimServer {
+ public:
+  static size_t fileId;
+
+  VimServer(const string& name);
+
+  bool Activate();
+  bool CheckServer(double timeout = .2);
+  bool Exit();
+  bool GetCursor(Location& location);
+  string GetName() { return name_; };
+  bool HighlightPattern(const string& pattern);
+  bool HighlightRange(const Range& range);
+  bool Redraw();
+  bool SetCursor(const Location& location);
+  void SetFileNameList(const list<string>&);
+  void SetLocationList();
+  bool SetNormalMode();
+  bool UnHighlightPattern(const string& pattern);
+  bool UnHighlightRange(const Range& range);
+
+  //TODO... this is just for debugging...
+  friend int main();
+ private:
+  bool RefreshServer(double timeout = .2);
+  list<string> fileNameList_;
+  map<string, HighlighId> highlightIdMap;
+  string name_;
+  bool active_;
+};
+
+bool GotResponse(const string& fileName, string& response, 
+    char delim, double timeout);
+
+template<typename T>
+bool GetValueFromVimServer(const string& command, T& out,
+    char delim = '>', double timeout = .1) {
+  string response;
+  //pseudo-unique (hidden) file name for the response
+  string responseFileName(".response_" + 
+      std::to_string(++VimServer::fileId));
+
+  //the vim server outputs to stdout, so redirect it to our response file.
+  string myCommand = command + " > " + responseFileName;
+  MySystemCall(myCommand.c_str());
+
+  if (GotResponse(responseFileName, response, delim, timeout)) {
+    //here is the "default" way to convert the string to type T, it could be
+    //paramterized, but this implementation will suffice for my purposes
+    std::cout << response << std::endl;
+    std::istringstream(response) >> out;
+    MySystemCall(string("rm " + responseFileName).c_str());
+    return true;
+  } else {
+    //note, no attempt is made to clean up the file...  maybe implement a
+    //scheduler to deal with this a little better...
+    return false;
+  }
+}
+
+template<>
+bool GetValueFromVimServer<list<string>>(const string& command, list<string>& out,
+    char delim, double timeout);
+
+}; //namespace vimserverNames
