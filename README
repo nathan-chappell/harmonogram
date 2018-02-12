@@ -1,0 +1,38 @@
+The Harmonogram Program
+Author: Nathan Chappell
+
+
+The program contained here is a "harmonogram drawer."  The idea was
+inspired by the concept of harmonograms meant to give visual
+representations of overtones.  For example, consider playing a perfect
+fifth on your favorite instrument (frequency ratio 3:2).  The combination
+of these two notes creates an entirely new feel, new sound, indeed a new
+shape.  After compiling the program, go to the command line and input:
+
+./harmonogram example/2O3O
+
+Hopefully you see a neat "hourglass" or "bent-inward-helix" on the screen.
+To its left, you should be able to see two little "lines" oscillating left
+and right, up and down.  The coordinates of the harmonogram are the sum of
+the coordinates of the two oscillators.  Now, press <space> (not in the
+text file, on the window with the oscillators!)  There should be some
+pulsing circles at the center of the various pendulums.  Click one, and you
+can move the pendulums around a little bit.  Also notice that when you
+click that dot, the "color effects" mode changes.  You can get fading and
+rainbow, but they will require quite a bit more computational power
+(apparently its much easier to draw a long, uniform line than a line with
+ varying attributes).
+
+If you've moved everything around, and want to reset, push "r" on the
+keyboard.  This actually causes the program to re-read the input files, so
+you can edit some parameters for the oscillators and quickly see the
+results.
+
+If all you do is edit some of the example input files given in the folder
+"examples," you will probably learn everything you need to about the syntax
+for specifying the oscillators, but if there are any other questions please
+send an email to:
+
+nathan.s.chappell@gmail.com
+
+
