@@ -10,7 +10,15 @@
 
 #include "location.h"
 
+/*
+ * TODO
+ * This hasn't been looked over in a little while, and the
+ * funcitonality has been stripped from the active program.
+ */
+
+
 namespace vimserverNames {
+
 using std::string;
 using std::list;
 using std::map;

@@ -13,6 +13,7 @@
 #include "trie.h"
 
 namespace pendulumNames {
+
 using std::cout;
 using std::endl;
 using std::ifstream;
@@ -27,6 +28,11 @@ using std::unique_ptr;
 const string kServerName = "PendulumServer";
 typedef string PendulumId;
 
+/*
+ * Simple parser using the trie implemented here to read config
+ * scripts for the harmonogram program.  The examples should
+ * entirely describe the syntax.
+ */
 class HarmonogramParser {
  public:
 
@@ -34,20 +40,20 @@ class HarmonogramParser {
 
   list<PendulumPtr> Parse(const list<string>& fileNameList);
 
-  bool Advance();
-  void Error(const string& function, const string& message);
-  string GetCursor();
+  bool     Advance();
+  void     Error(const string& function, const string& message);
+  string   GetCursor();
   Location GetLocation() { return location_; }
-  istream& GetStream() { return *input_; }
-  string GetToken() { return trie_.GetToken(); }
-  bool Good() { return input_->good(); }
+  istream& GetStream()   { return *input_; }
+  string   GetToken()    { return trie_.GetToken(); }
+  bool     Good()        { return input_->good(); }
 
   string lastRead;
   map<PendulumId, Range> locationMap;
 
  private:
   istream* input_;
-  Trie trie_;
+  Trie     trie_;
   Location location_;
 
   void AdvanceCursor();

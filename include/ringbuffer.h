@@ -29,24 +29,52 @@ using std::vector;
 
 template<typename T>
 class RingBufferIterator {
- public:
-  size_t pos;
-  vector<T>* ptr;
-  size_t& operator++() {
-    ++pos %= ptr->size();
-    return pos;
-  }
-  size_t& operator--() {
-    (pos == 0) ? pos = ptr->size() - 1 : --pos;
-    return pos;
-  }
-  T* get() { return &(*ptr)[pos]; }
-  T& operator*() { return (*ptr)[pos]; }
-  T* operator->() { return get(); }
-  const T& operator*() const { return (*ptr)[pos]; }
-  const T& operator->() const { return (*ptr)[pos]; }
-  bool operator==(const RingBufferIterator& l) const { return pos == l.pos; }
-  bool operator!=(const RingBufferIterator& l) const { return !(*this == l); }
+  public:
+
+    size_t     pos;
+    vector<T>* underlyingVector;
+
+    /*
+     * size_t& operator++() 
+     */
+    size_t& operator++()
+    { 
+      ++pos %= underlyingVector->size();
+      return pos;
+    }
+    /*
+     * size_t& operator--()
+     */
+    size_t& operator--()
+    {
+      (pos == 0) ? pos = underlyingVector->size() - 1 : --pos;
+      return pos;
+    }
+    /*
+     * size_t operator++(int)
+     */
+    size_t operator++(int)
+    {
+      auto tmp = *this;
+      this->operator++();
+      return tmp;
+    }
+    /*
+     * size_t operator--(int)
+     */
+    size_t operator--(int)
+    {
+      auto tmp = *this;
+      this->operator--();
+      return tmp;
+    }
+    T& operator*()              { return (*underlyingVector)[pos]; }
+    T* operator->()             { return &(*underlyingVector)[pos]; }
+    const T& operator*() const  { return (*underlyingVector)[pos]; }
+    const T* operator->() const { return &(*underlyingVector)[pos]; }
+    bool operator==(const RingBufferIterator& l) const { return pos == l.pos; }
+    bool operator!=(const RingBufferIterator& l) const { return !(*this == l); }
+
 };
 
 /*
@@ -55,49 +83,68 @@ class RingBufferIterator {
  */
 template<typename T>
 class RingBuffer {
- public:
-  using Iterator = RingBufferIterator<T>;
+  public:
+    using Iterator = RingBufferIterator<T>;
 
-  RingBuffer() : 
-    front_index(0), buffer() {}
+    RingBuffer() : front_index(0), buffer() {}
 
-  Iterator begin() {
-    if (front_index == buffer.size() - 1) return Iterator{0, &buffer};
-    else return {front_index + 1, &buffer};
-  }
-
-  Iterator end() {
-    return {front_index, &buffer};
-  }
-
-  T& front() {
-    return *begin();
-  }
-
-  void Push(const T& position) { 
-    if (buffer.size() == 0) {
-      buffer.push_back(position);
-    } else {
-      ++front_index %= buffer.size();
-      buffer[front_index] = position; 
+    /*
+     * begin
+     */
+    Iterator begin()
+    {
+      if (front_index == buffer.size() - 1) return Iterator{0, &buffer};
+      else return {front_index + 1, &buffer};
     }
-  }
+    /*
+     * end
+     */
+    Iterator end()
+    {
+      return {front_index, &buffer};
+    }
+    /*
+     * front
+     */
+    T& front()
+    {
+      return *begin();
+    }
+    /*
+     * Push
+     */
+    void Push(const T& position)
+    {
+      if (buffer.size() == 0)
+      {
+        buffer.push_back(position);
+      } else {
+        ++front_index %= buffer.size();
+        buffer[front_index] = position; 
+      }
+    }
+    /*
+     * Fill
+     */
+    void Fill(size_t size, const T& pos)
+    {
+      buffer.clear();
+      buffer.reserve(size);
+      for(size_t i = 0; i < size; ++i) buffer.push_back(pos);
+    }
+    /*
+     * Translate
+     */
+    void Translate(const T& p)
+    {
+      for (auto& pos : buffer) { pos += p; }
+    }
 
-  void Fill(size_t size, const T& pos) {
-    buffer.clear();
-    buffer.reserve(size);
-    for(size_t i = 0; i < size; ++i) buffer.push_back(pos);
-  }
+          T& operator[](size_t i)       { return buffer[i]; }
+    const T& operator[](size_t i) const { return buffer[i]; }
 
-  void Translate(const T& p) {
-    for (auto& pos : buffer) { pos += p; }
-  }
-
-  T& operator[](size_t i) { return buffer[i]; }
-  const T& operator[](size_t i) const { return buffer[i]; }
-
-  //TODO make these private, possibly needing a friend class...
-  size_t front_index;
-  vector<T> buffer;
+    //TODO make these private, possibly needing a friend class...
+    size_t front_index;
+    vector<T> buffer;
 };
 

@@ -4,6 +4,11 @@
 #include <string>
 #include <list>
 
+/*
+ * Simple structures for keeping track of locations within files
+ */
+
+
 struct Location {
   std::string fileName;
   size_t line;

@@ -1,7 +1,7 @@
 CXX = g++ -std=c++14
 CPPFLAGS = -g -O0 -Wall -I./include
 GTKFLAGS = `pkg-config --cflags --libs gtkmm-3.0`
-COMP = $(CXX) $(CPPFLAGS) $^ -o elf/$@
+COMP = $(CXX) $(CPPFLAGS) $^ -o $@
 SRCO = pendulum.o pendulum_parser.o trie.o location.o vimserver.o
 SRCDIR = ./src
 OBJ = $(patsubst %, src/%, $(SRCO))

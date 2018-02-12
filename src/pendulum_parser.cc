@@ -34,7 +34,7 @@ enum TokenName {
   kTokType
 };
 
-const list<pair<TokenName, string>> tokenList {
+const list<pair<TokenName, string>> kTokenList {
  {kTokAmplitude, "amplitude:"},
  {kTokCenter, "center:"},
  {kTokColor, "color:"},
@@ -53,7 +53,11 @@ const list<pair<TokenName, string>> tokenList {
  {kTokType, "type:"}
 };
 
-list<pair<TokenName, string>> GetTokenList() {
+/*
+ * GetTokenList
+ */
+list<pair<TokenName, string>> GetTokenList()
+{
   return {
  {kTokAmplitude, "amplitude:"},
  {kTokCenter, "center:"},
@@ -73,69 +77,96 @@ list<pair<TokenName, string>> GetTokenList() {
  {kTokType, "type:"}
 };
 }
-
-TokenName StringToTokenName(const string& str) {
-  for (const auto& p : tokenList) {
+/*
+ * StringToTokenName
+ */
+TokenName StringToTokenName(const string& str)
+{
+  for (const auto& p : kTokenList)
+{
     if (str == p.second) return p.first;
   }
   return kTokInvalid;
 }
 
 //
-//Parsing Utilities, forward declared Just in Case...
+//Standalone Parsing functions...
 
-Color ReadColor(HarmonogramParser& parser);
-void ReadCommaDouble(HarmonogramParser& parser, double& d);
-void ReadComment(HarmonogramParser& parser);
-list<PendulumPtr> ReadCurrentInput(HarmonogramParser& parser);
-string ReadIdentifier(HarmonogramParser& parser);
-PendulumPtr ReadPendulum(HarmonogramParser& parser);
-Position ReadPosition(HarmonogramParser& parser);
+Color       ReadColor      (HarmonogramParser& parser);
+void        ReadCommaDouble(HarmonogramParser& parser, double& d);
+void        ReadComment    (HarmonogramParser& parser);
+string      ReadIdentifier (HarmonogramParser& parser);
+PendulumPtr ReadPendulum   (HarmonogramParser& parser);
+Position    ReadPosition   (HarmonogramParser& parser);
+
 SimplePendulum::Type ReadType(HarmonogramParser& parser);
+list<PendulumPtr>    ReadCurrentInput(HarmonogramParser& parser);
 //
 
 //From the HarmonogramParser class
 
-HarmonogramParser::HarmonogramParser() {
+/*
+ * HarmonogramParser::HarmonogramParser()
+ */
+HarmonogramParser::HarmonogramParser()
+{
   location_.Reset();
-  for (const auto& p : GetTokenList()) {
+  for (const auto& p : GetTokenList())
+  {
     trie_.Insert(p.second);
   }
 }
-
-bool HarmonogramParser::Advance() {
+/*
+ * HarmonogramParser::Advance
+ */
+bool HarmonogramParser::Advance()
+{
   lastRead = move(trie_.ReadNext(GetStream()));
   AdvanceCursor();
   return input_->good();
 }
-
-void HarmonogramParser::AdvanceCursor() {
+/*
+ * HarmonogramParser::AdvanceCursor
+ */
+void HarmonogramParser::AdvanceCursor()
+{
   if (lastRead.find('\n') != lastRead.npos) location_.column = 0;
   location_.line += count_if(lastRead.begin(), lastRead.end(),
       [](char c) -> bool { return c == '\n'; }
     );
   location_.column += lastRead.size() - lastRead.find_last_of('\n');
 }
-
-void HarmonogramParser::Error(const string& function, const string& message) {
+/*
+ * HarmonogramParser::Error
+ */
+void HarmonogramParser::Error(const string& function, const string& message)
+{
   cout << function << "(): " << message << " at: " << GetCursor() << endl;
   assert(false);
 }
-
-string HarmonogramParser::GetCursor() {
+/*
+ * HarmonogramParser::GetCursor
+ */
+string HarmonogramParser::GetCursor()
+{
   return location_.ToString();
 }
-
-list<PendulumPtr> HarmonogramParser::Parse(const list<string>& fileNameList) {
+/*
+ * HarmonogramParser::Parse
+ */
+list<PendulumPtr> HarmonogramParser::Parse(const list<string>& fileNameList)
+{
   locationMap.clear();
   lastRead = "";
   list<PendulumPtr> pendulumPtrList;
-  for (const auto& fileName : fileNameList) {
+  for (const auto& fileName : fileNameList)
+{
     cout << "parsing: " << fileName << endl;
     location_.Reset();
     location_.fileName = fileName;
     ifstream file(fileName);
-    if (!file.good()) {
+    if (!file.good())
+{
       cout << "couldn't open file: " << fileName << endl;
       file.close();
       continue;
@@ -151,7 +182,11 @@ list<PendulumPtr> HarmonogramParser::Parse(const list<string>& fileNameList) {
 
 //
 
-Color ReadColor(HarmonogramParser& parser) {
+/*
+ * ReadColor
+ */
+Color ReadColor(HarmonogramParser& parser)
+{
   Color color;
   parser.GetStream() >> color.R;
   ReadCommaDouble(parser, color.G);
@@ -159,43 +194,59 @@ Color ReadColor(HarmonogramParser& parser) {
   ReadCommaDouble(parser, color.A);
   return color;
 }
-
-void ReadCommaDouble(HarmonogramParser& parser, double& d) {
+/*
+ * ReadCommaDouble
+ */
+void ReadCommaDouble(HarmonogramParser& parser, double& d)
+{
   parser.Advance();
-  switch (StringToTokenName(parser.GetToken())) {
+  switch (StringToTokenName(parser.GetToken()))
+{
     case kTokComma : parser.GetStream() >> d; break;
     default : parser.Error( __func__, "Expected a ','");
   }
 }
-
-void ReadComment(HarmonogramParser& parser) {
-  while (parser.Good()) {
+/*
+ * ReadComment
+ */
+void ReadComment(HarmonogramParser& parser)
+{
+  while (parser.Good())
+{
     parser.Advance();
-    switch (StringToTokenName(parser.GetToken())) {
+    switch (StringToTokenName(parser.GetToken()))
+{
       case kTokCommentEnd : return; break;
       default : continue;
     }
   }
   parser.Error( __func__, "Expected '*/'");
 }
-
-list<PendulumPtr> ReadCurrentInput(HarmonogramParser& parser) {
+/*
+ * ReadCurrentInput
+ */
+list<PendulumPtr> ReadCurrentInput(HarmonogramParser& parser)
+{
   unique_ptr<CompoundPendulum> compoundPtr(new CompoundPendulum());
-  double& cyclesRef = compoundPtr->cycles_;
+  double& cyclesRef = compoundPtr->cycles();
   list<PendulumPtr> pendulumPtrList;
   Location startLocation = parser.GetLocation();
   bool read = false;
   Range range;
-  while (parser.Good() && !read) {
+  while (parser.Good() && !read)
+{
     parser.Advance();
     Location location = parser.GetLocation();
-    switch (StringToTokenName(parser.GetToken())) {
+    switch (StringToTokenName(parser.GetToken()))
+{
       case kTokPendulumBegin :
         pendulumPtrList.push_back(move(ReadPendulum(parser)));
-        if (!pendulumPtrList.back()->IsValid()) {
+        if (!pendulumPtrList.back()->IsValid())
+{
           parser.Error( __func__, "Invalid Pendulum");
         } 
-        if (parser.locationMap.count(pendulumPtrList.back()->name)) {
+        if (parser.locationMap.count(pendulumPtrList.back()->name))
+{
           cout << "warning, overwriting node: " << 
             pendulumPtrList.back()->name << endl;
         }
@@ -215,7 +266,8 @@ list<PendulumPtr> ReadCurrentInput(HarmonogramParser& parser) {
         else read = true;
     }
   }
-  for (auto& pendulumPtr : pendulumPtrList) {
+  for (auto& pendulumPtr : pendulumPtrList)
+{
     compoundPtr->AddPendulum(pendulumPtr.get());
   }
   compoundPtr->SetPreferredBufferSize();
@@ -223,25 +275,34 @@ list<PendulumPtr> ReadCurrentInput(HarmonogramParser& parser) {
   pendulumPtrList.push_back(move(compoundPtr));
   return pendulumPtrList;
 }
-
-string ReadIdentifier(HarmonogramParser& parser) {
+/*
+ * ReadIdentifier
+ */
+string ReadIdentifier(HarmonogramParser& parser)
+{
   string id;
   parser.GetStream() >> std::ws;
-  while (parser.Good() && isalnum(parser.GetStream().peek())) {
+  while (parser.Good() && isalnum(parser.GetStream().peek()))
+{
       id.push_back(parser.GetStream().get());
   }
   return id;
 }
-
-PendulumPtr ReadPendulum(HarmonogramParser& parser) {
+/*
+ * ReadPendulum
+ */
+PendulumPtr ReadPendulum(HarmonogramParser& parser)
+{
   unique_ptr<SimplePendulum> pendulumPtr(new SimplePendulum());
   Location location = parser.GetLocation();
   bool read = false;
   double startPhase;
   while (parser.Good() && !read && 
-      StringToTokenName(parser.GetToken()) != kTokPendulumEnd) {
+      StringToTokenName(parser.GetToken()) != kTokPendulumEnd)
+{
     parser.Advance();
-    switch (StringToTokenName(parser.GetToken())) {
+    switch (StringToTokenName(parser.GetToken()))
+{
       case kTokType : pendulumPtr->type = ReadType(parser); break;
       case kTokName : pendulumPtr->name = ReadIdentifier(parser); 
                       break;
@@ -264,36 +325,35 @@ PendulumPtr ReadPendulum(HarmonogramParser& parser) {
   pendulumPtr->SetPreferredBufferSize();
   return move(pendulumPtr);
 }
-
-Position ReadPosition(HarmonogramParser& parser) {
+/*
+ * ReadPosition
+ */
+Position ReadPosition(HarmonogramParser& parser)
+{
   Position position;
   parser.GetStream() >> position.x;
   parser.Advance();
-  switch (StringToTokenName(parser.GetToken())) {
+  switch (StringToTokenName(parser.GetToken()))
+{
     case kTokComma : parser.GetStream() >> position.y; break;
     default: parser.Error( __func__, "Expected a ','");
   }
   return position;
 }
-
-SimplePendulum::Type ReadType(HarmonogramParser& parser) {
+/*
+ * ReadType
+ */
+SimplePendulum::Type ReadType(HarmonogramParser& parser)
+{
   //parser.Advance();
   string typeName;
   typeName = ReadIdentifier(parser);
   for (auto& c : typeName) c = tolower(c);
-  switch (StringToTokenName(typeName)) {
+  switch (StringToTokenName(typeName))
+{
     case kTokOscillation : return SimplePendulum::kOscillation; break;
     case kTokRotation : return SimplePendulum::kRotation; break;
     default : parser.Error( __func__, "Expected a SimplePendulum::Type"); 
               return SimplePendulum::kInvalid;
   }
 }
-
-/*
-double pendulumNames::PendulumBase::timeDelta = .2;
-
-int main(int argc, char** argv) {
-  HarmonogramParser parser;
-  parser.Parse({"input", "input2"});
-}
-*/

@@ -7,6 +7,10 @@
 #include <memory>
 #include <string>
 
+/*
+ * String searching trie used by parser
+ */
+
 class TrieNode;
 class Trie {
  public:
