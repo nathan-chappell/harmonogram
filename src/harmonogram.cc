@@ -20,11 +20,11 @@
 #include "pendulum.h"
 #include "pendulum_parser.h"
 #include "ringbuffer.h"
-#include "vimserver.h"
+//#include "vimserver.h"
 
 using namespace std;
 using namespace pendulumNames;
-using namespace vimserverNames;
+//using namespace vimserverNames;
 
 double defaultDelta = .01;
 double PendulumBase::timeDelta = defaultDelta;
@@ -260,7 +260,7 @@ class PendulumDrawer {
  */
 class Harmonogram : public Gtk::DrawingArea {
  public:
-  Harmonogram() : vimServer("Harmonogram") {
+  Harmonogram()  /*: vimServer("Harmonogram")*/ {
     //signals
 
     //time evolution
@@ -285,8 +285,8 @@ class Harmonogram : public Gtk::DrawingArea {
     
     //Set up structures from reading the input file
     ReRead();
-    vimServer.SetFileNameList(fileNameList);
-    vimServer.Activate();
+    //vimServer.SetFileNameList(fileNameList);
+    //vimServer.Activate();
   }
 
   void PrintData() {
@@ -338,13 +338,13 @@ class Harmonogram : public Gtk::DrawingArea {
     cout << __func__ << endl;
     if (!lastClickedPendulum) return;
     cout << "last clicked pendulum: " << lastClickedPendulum->Name() << endl;
-    vimServer.SetCursor(
-        harmonogramParser_.locationMap[lastClickedPendulum->Name()].begin);
-    if (lastHighlighted != "") {
-      vimServer.UnHighlightPattern(lastHighlighted);
-    }
+    //vimServer.SetCursor(
+        //harmonogramParser_.locationMap[lastClickedPendulum->Name()].begin);
+    //if (lastHighlighted != "") {
+      //vimServer.UnHighlightPattern(lastHighlighted);
+    //}
     lastHighlighted = lastClickedPendulum->Name();
-    vimServer.HighlightPattern(lastHighlighted);
+    //vimServer.HighlightPattern(lastHighlighted);
   }
 
     bool on_button_press_event(GdkEventButton* button) {
@@ -362,12 +362,12 @@ class Harmonogram : public Gtk::DrawingArea {
           state = kIdle;
           return true; break;
         case 2 : return false; break;
-        case 3 : if (!vimServer.CheckServer()) vimServer.Activate();
+        /*case 3 : if (!vimServer.CheckServer()) vimServer.Activate();
                  vimServer.setNormal = vimServer.SetNormalMode();
                  VimGotoPendulum();
                  UpdateHP();
                  vimServer.setNormal = false;
-                 return true; break;
+                 return true; break;*/
         default : return false;
       }
     } else {
@@ -391,7 +391,7 @@ class Harmonogram : public Gtk::DrawingArea {
 
   bool on_draw(const Cairo::RefPtr<Cairo::Context>& c) {
     for (PendulumDrawer& p : pendulumDrawerList_) p.Draw(c);
-    if (!vimServer.IsActive()) return true;
+    //if (!vimServer.IsActive()) return true;
     if (currentHighlightPendulum)
       currentHighlightPendulum->CenterDraw(c);
     return true;
@@ -428,7 +428,7 @@ class Harmonogram : public Gtk::DrawingArea {
   HarmonogramParser harmonogramParser_;
   list<PendulumPtr> pendulumList_;
   list<PendulumDrawer> pendulumDrawerList_;
-  VimServer vimServer;
+  //VimServer vimServer;
 };
 
 /*
@@ -507,8 +507,8 @@ bool UpdateHighlightPendulum(Harmonogram* harmonogram) {
    * set this as the currentHighlightPendulum, so that it's center can
    * be drawn.
    */
-  map<PendulumId,Range>::value_type* val = nullptr;
-  if (harmonogram->vimServer.GetCursor(curPos)) {
+  //map<PendulumId,Range>::value_type* val = nullptr;
+  /*if (harmonogram->vimServer.GetCursor(curPos)) {
     for (auto& p : harmonogram->harmonogramParser_.locationMap) 
       if (p.second.InRange(curPos)) 
         for (auto& pDrawer : harmonogram->pendulumDrawerList_) {
@@ -524,7 +524,7 @@ bool UpdateHighlightPendulum(Harmonogram* harmonogram) {
             return true;
           }
         }
-  }
+  }*/
   if (harmPtr) {
     currentHighlightPendulum = harmPtr;
     cout << "current set: " << currentHighlightPendulum->Name() << endl;
